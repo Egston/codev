@@ -1,7 +1,8 @@
-# Louis BAYLE, 2018-10-11
+# Louis BAYLE
 # Version 0.4
 
-# 2018-10-11: update apache 2.4.25 fur security updates
+# 2018-10-11: optional: install latest apache for security updates
+# 2018-10-22: update PHP 7.2
 
 FROM centos:centos7
 MAINTAINER Louis BAYLE <lbayle.work@gmail.com>
@@ -16,17 +17,33 @@ MAINTAINER Louis BAYLE <lbayle.work@gmail.com>
 # ====================================================
 # build & run
 # ====================================================
+# docker build --rm -t codevtt:1.3.0.2 .
 # docker build --rm -t codevtt:latest .
 
-# docker run --name codevtt -h codevtt -d -p 80:80 --link mariadb lbayle/codevtt:latest
-# docker run --name codevtt -h codevtt -d -p 80:80 -p 443:443 -v /etc/ssl/certs:/etc/ssl/certs --link mariadb lbayle/codevtt:latest
+# --- start DB
+# docker run --name mariadb -h mariadb -d --restart=unless-stopped -e MYSQL_ROOT_PASSWORD=my_password -e MYSQL_DATABASE=bugtracker centos/mariadb:latest
+# docker exec -i  mariadb mysql -uroot -pmy_password --force bugtracker < mantis_codevtt_freshInstall.sql
+
+# --- start CodevTT PROD
+# docker run --name codevtt -h codevtt -d --restart=unless-stopped -p 80:80 --link mariadb lbayle/codevtt:latest
+# or
+# docker run --name codevtt -h codevtt -d --restart=unless-stopped -p 80:80 -p 443:443 -v /etc/ssl/certs:/etc/ssl/certs --link mariadb lbayle/codevtt:latest
+
+# --- start CodevTT DEV container (using sources from host)
+# docker run --name codevtt_dev -h codevtt_dev \
+#         -d --restart=unless-stopped \
+#         -p 80:80 --link mariadb \
+#         -v /var/www/html/codevtt:/var/www/html/codevtt \
+#         -v /tmp/codevtt:/tmp/codevtt \
+#         -v /tmp/codevtt/logs/httpd:/var/log/httpd \
+#         lbayle/codevtt:latest
+#
+# --- explore container
 # docker exec -it codevtt bash
 
-# docker run --name mariadb -h mariadb -d -e MYSQL_ROOT_PASSWORD=my_password -e MYSQL_DATABASE=bugtracker centos/mariadb:latest
-# docker exec -i  mariadb mysql -uroot -pmy_password --force bugtracker < mantis_codevtt_freshInstall.sql
 # ====================================================
 
-# Set ATOS proxy
+# Set your proxy
 #ENV http_proxy=http://193.56.47.8:8080
 #ENV https_proxy=http://193.56.47.8:8080
 #RUN sed -i '2iproxy=http:\/\/193.56.47.8:8080' /etc/yum.conf
@@ -53,8 +70,8 @@ RUN rpm --import /etc/pki/rpm-gpg/RPM-GPG-KEY-EPEL-7 /etc/pki/rpm-gpg/RPM-GPG-KE
 RUN yum -y install \
         vim-enhanced \
         wget \
-        git \
-        git-gui \
+#        git \
+#        git-gui \
         unzip \
         p7zip && \
     yum clean all
@@ -71,32 +88,32 @@ RUN yum -y --setopt=tsflags=nodocs install \
         openssl && \
     yum clean all
 
-# Installing PHP 7.0
-RUN  yum -y --enablerepo=remi-php70 install \
-        php-cli \
-        php \
-        php-fpm \
-        php-common \
-        php-mysqlnd \
-        php-xml \
-        php-adodb \
-        php-curl \
-        php-gd \
-        php-mcrypt \
-        php-ldap \
-        php-imap \
-        php-soap \
-        php-mbstring \
-        php-pecl-memcache \
-        php-pecl-memcached \
-        php-pecl-zip \
-        php-pecl-xdebug \
-        php-pear \
-        php-pdo \
-        php-bcmath \
-        php-process \
-        php-tidy \
-        php-intl \
+# Installing PHP 7.2
+RUN  yum -y --enablerepo=remi-php72 install \
+        php72-php-cli \
+        php72-php \
+        php72-php-fpm \
+        php72-php-common \
+        php72-php-mysqlnd \
+        php72-php-xml \
+        php72-php-adodb \
+        php72-php-curl \
+        php72-php-gd \
+        php72-php-mcrypt \
+        php72-php-ldap \
+        php72-php-imap \
+        php72-php-soap \
+        php72-php-mbstring \
+        php72-php-pecl-memcache \
+        php72-php-pecl-memcached \
+        php72-php-pecl-zip \
+        php72-php-pecl-xdebug \
+        php72-php-pear \
+        php72-php-pdo \
+        php72-php-bcmath \
+        php72-php-process \
+        php72-php-tidy \
+        php72-php-intl \
         phpmyadmin && \
     yum clean all
 
@@ -122,7 +139,7 @@ RUN sed -i "s/Require ip 127.0.0.1/Require ip 172.17/" /etc/httpd/conf.d/phpMyAd
 # ------------------
 # install MantisBT
 
-ENV MANTIS_VER 2.12.0
+ENV MANTIS_VER 2.18.0
 ENV MANTIS_URL https://downloads.sourceforge.net/project/mantisbt/mantis-stable/${MANTIS_VER}/mantisbt-${MANTIS_VER}.tar.gz
 ENV MANTIS_FILE mantisbt-${MANTIS_VER}.tar.gz
 
