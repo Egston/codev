@@ -125,8 +125,10 @@ class FilterCommandField extends MantisFilter {
                "WHERE codev_team_user_table.team_id = codev_team_table.id ".
                " AND   codev_team_user_table.user_id = " . db_param();
 
-      // only teams where project is defined
-      $query .= " AND 1 = is_project_in_team(" . (int)$project_id . ", codev_team_table.id) ";
+      if ($project_id) {
+         // only teams where project is defined
+         $query .= " AND 1 = is_project_in_team(" . (int)$project_id . ", codev_team_table.id) ";
+      }
 
       $query .= "ORDER BY codev_team_table.name";
 
